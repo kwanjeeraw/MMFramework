@@ -1,0 +1,61 @@
+######################## RUN MODELS ########################
+##### ML models #####
+#PLS-DA
+Rscript Pls_run.R --wkpath /Users/mint/Documents/siri/nonImage/production/MMFramework/ \
+--proc auto \
+--input LN/input_LN.csv \
+--outpath LN/metabolomics \
+--train LN/TrainList_biclass.txt \
+--test LN/TestList_biclass.txt
+
+#RF
+Rscript Rf_run.R --wkpath /Users/mint/Documents/siri/nonImage/production/MMFramework/ \
+--proc log2 \
+--input LN/input_LN.csv \
+--outpath LN/metabolomics \
+--train LN/TrainList_biclass.txt \
+--test LN/TestList_biclass.txt
+
+##### DL models ##### 
+#Grad-CAM
+python3 Gradcam_run.py --wkpath /Users/mint/Documents/siri/nonImage/production/MMFramework/ \
+--proc log2 \
+--input LN/input_LN.csv \
+--outpath LN/metabolomics \
+--train LN/TrainList_biclass.txt \
+--test LN/TestList_biclass.txt \
+--epoch 200 \
+--batch 32
+
+#SHAP
+python3 Shap_run.py --wkpath /Users/mint/Documents/siri/nonImage/production/MMFramework/ \
+--proc log2 \
+--input LN/input_LN.csv \
+--outpath LN/metabolomics \
+--train LN/TrainList_biclass.txt \
+--test LN/TestList_biclass.txt \
+--epoch 200 \
+--batch 32
+
+######################## ################### ########################
+
+######################## COMBINE RANKINGS ########################
+##### Combine across data types #####
+Rscript Rank_run.R --wkpath /Users/mint/Documents/siri/nonImage/running/code \
+--outpath ../LNMN/RANKOUT \
+--nperm 1000 \
+--infiles ../LNMN/clinic_binary/auto_plsda_feature.csv ../LNMN/met_ratio_binary/auto_plsda_feature.csv ../LNMN/ratio_binary/auto_plsda_feature.csv
+
+##### Combine across learning models #####
+Rscript Rank_run.R --wkpath /Users/mint/Documents/siri/nonImage/running/code \
+--outpath ../LN/RANKOUT \
+--nperm 1000 \
+--infiles ../LN/ratio_multiclass/log2_rf_feature_control.csv ../LN/ratio_multiclass/auto_pls_feature_control.csv ../LN/ratio_multiclass/log2_gradcam_feature_control.csv ../LN/ratio_multiclass/log2_shap_feature_control.csv
+
+##### Combine across resamples #####
+Rscript Rank_run.R --wkpath /Users/mint/Documents/siri/nonImage/running/code \
+--outpath ../LNMN/RANKOUT \
+--nperm 1000 \
+--infiles ../LNMN/clinic_binary/auto_plsda_feature.csv
+
+######################## ################### ########################
