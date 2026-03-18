@@ -17,13 +17,13 @@ compute_model_performance(folder_path="LN/metabolomics") #for metabolomics data
 # --------------------------------------------------------
 # 2. Plot comparative performance heatmap
 # --------------------------------------------------------
-input_list = c("I"="LN/integrated","C"="LN/clinical","M"="LN/metabolomics")
+input_list = c("Int"="LN/integrated","Cli"="LN/clinical","Met"="LN/metabolomics")
 plot_comparative_heatmap(input_list, title="Control vs LN")
 
 # --------------------------------------------------------
 # 3. Plot cross-modal rank comparison
 # --------------------------------------------------------
-input_list = c("I"="LN/integrated","C"="LN/clinical","M"="LN/metabolomics")
+input_list = c("Int"="LN/integrated","Cli"="LN/clinical","Met"="LN/metabolomics")
 featureFile = "log2_rf_feature.csv"
 plot_cross_modal_rank(input_list, featureFile, title="Control vs LN")
 
