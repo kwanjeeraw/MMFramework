@@ -17,81 +17,140 @@ knitr::opts_chunk$set(
 )
 ```
 
-## 1 INSTALLATION
+## INSTALLATION
 
 1. Install prerequisite software and required packages (see [instruction](https://github.com/kwanjeeraw/MMFramework)).
 2. Download MMFramework from [here](https://github.com/kwanjeeraw/MMFramework/blob/main/MMFramework.zip)
 3. Unzip the downloaded MMFramework.zip file to your desired directory.
+4. Run the framework script step-by-step as described in the next section.
 
-## 2 RUNNING FRAMEWORK
-1. Open a terminal:
-* Windows: Command Prompt or PowerShell
-* macOS / Linux: Terminal
-2. Open R or RStudio.
-3. Run the framework script step-by-step as the following section.
-
-## 3 MMFramework
-1. A schematic overview of the analysis workflow is shown in Figure S1.
+## MMFramework
+A schematic overview of the analysis workflow is shown in Figure 1.
 
 ![**Figure 1.** Overview of the analysis workflow](Fig1.png)
 
-*2.1 Input data*
-  The framework requires three input data types:
-  * Clinical data
-  * Metabolomics data
-  * Integrated data (a concatenated table of clinical and metabolomics data)
-  A dataframe of patient metadata and metabolite profiles as shown in Table 2.
+### ***Input data***
+
+The framework requires three input data types:
+
+ - Clinical data
+ - Metabolomics data
+ - Integrated data (a concatenated table of clinical and metabolomics data)
+
+The input dataset should be a table containing the '*Index*' and '*Class*' columns, along with feature variables, as illustrated in Table 1. Categorical variables (e.g., gender) should be converted to numeric codes.
+
+**Table 1**. Format of the input dataset. The 'Index' and 'Class' columns are mandatory (brown). The integrated table includes clinical variables (blue) and metabolite features (green).
 
 ```{r,echo=FALSE, results='asis', message=FALSE, warning=FALSE}
 library(knitr)
 library(kableExtra)
-dt = read.csv(file = "../LN/input_LN.csv", row.names = FALSE)
-kable(dt) %>%
-  kable_styling(c("striped", "bordered"), full_width = F) %>%
-  column_spec(1:9, bold = T, background = '#FFCCCC') %>%
-  column_spec(9, border_right = T) %>%
-  column_spec(10:14, background = '#CCE5FF')
+dt = read.csv("input_LN.csv", row.names = NULL, check.names = FALSE)
+dt[c(1:5,72:76), 1:14] %>%
+  kable(row.names = FALSE) %>%
+  kable_styling(c("striped", "bordered"), full_width = FALSE) %>%
+  column_spec(1:2, bold = TRUE, background = '#a6761d') %>%
+  column_spec(2, border_right = TRUE) %>%
+  column_spec(3:9, bold = TRUE, background = '#5A9BD5') %>%
+  column_spec(9, border_right = TRUE) %>%
+  column_spec(10:14, background = '#1b9e77')
 ```
 
-**Table 2**. Part of adipose tissue data set is illustrated including patient metadata (red) and metabolite profiles (blue).
+### 1. Data Partitioning (Optional)
 
-######################## RUN MODELS ########################
-##### ML models #####
-#PLS-DA
-Rscript Pls_run.R --wkpath /Users/mint/Documents/siri/nonImage/production/MMFramework/ \
+This step creates training and test sets for model building. It is optional if training and test datasets are already available.
+
+Run the following R script in the R terminal to generate training and test sets saved as TrainList_biclass.txt and TestList_biclass.txt.
+
+```
+source("create_train_test.R")
+```
+
+The outputs of this step are text files (.txt), each containing lists of resampled training and test indices in the following format:
+
+Resample01: 1, 2, 3, 5, 6, 8, 9, 10, ...
+
+Resample02: 1, 4, 5, 6, 7, 8, 9, 11, ...
+
+Each number corresponds to a sample index (i.e., the '*Index*' column in the input dataset).
+
+### 2. Classification Model Building
+
+Step: Open terminal → Go to the MMFramework directory → Run the script with required arguments → Check outputs in *outpath* directory
+
+ 1\) Open a terminal:
+ 
+ - Windows: Command Prompt or PowerShell
+ - macOS / Linux: Terminal
+ 
+ 2\) Navigate to the directory containing MMFramework:
+ 
+ ```
+ cd /path/to/MMFramework
+ ```
+ 
+ 3\) Run the following script for each input type by specifying the required arguments:
+
+  - *--wkpath*: Working directory path of MMFramework (e.g., /path/to/MMFramework, default: current working directory)
+  - *--proc*: Data processing method (options: log2, raw, auto, minmax; default: log2)
+  - *--input*: Input file in CSV format (e.g., LN/input_LN.csv)
+  - *--outpath*: Output directory path (e.g., LN/clinical)
+  - *--train*: Text file containing training indices (e.g., TrainList.txt)
+  - *--test*: Text file containing test indices (e.g., TestList.txt)
+  
+  Additional arguments for DL models:
+  
+  - *--epoch*: Number of training epochs for DL models only (default: 200)
+  - *--batch*: Number of training batch size for DL models only (default: 32)
+
+#### 2.1 ML models ####
+#### ***PLS-DA***
+```
+Rscript Pls_run.R --wkpath /Users/macuser/project/MMFramework/ \
 --proc auto \
 --input LN/input_LN.csv \
---outpath LN/metabolomics \
+--outpath LN/integrated \
 --train LN/TrainList_biclass.txt \
 --test LN/TestList_biclass.txt
+```
 
-#RF
-Rscript Rf_run.R --wkpath /Users/mint/Documents/siri/nonImage/production/MMFramework/ \
+#### ***RF***
+```
+Rscript Rf_run.R --wkpath /Users/macuser/project/MMFramework/ \
 --proc log2 \
 --input LN/input_LN.csv \
---outpath LN/metabolomics \
+--outpath LN/integrated \
 --train LN/TrainList_biclass.txt \
 --test LN/TestList_biclass.txt
+```
 
-##### DL models ##### 
-#Grad-CAM
-python3 Gradcam_run.py --wkpath /Users/mint/Documents/siri/nonImage/production/MMFramework/ \
+#### 2.2 DL models ####
+#### ***Grad-CAM***
+```
+python3 Gradcam_run.py --wkpath /Users/macuser/project/MMFramework/ \
 --proc log2 \
 --input LN/input_LN.csv \
---outpath LN/metabolomics \
+--outpath LN/integrated \
 --train LN/TrainList_biclass.txt \
 --test LN/TestList_biclass.txt \
 --epoch 200 \
 --batch 32
+```
 
-#SHAP
-python3 Shap_run.py --wkpath /Users/mint/Documents/siri/nonImage/production/MMFramework/ \
+#### ***SHAP***
+```
+python3 Shap_run.py --wkpath /Users/macuser/project/MMFramework/ \
 --proc log2 \
 --input LN/input_LN.csv \
---outpath LN/metabolomics \
+--outpath LN/integrated \
 --train LN/TrainList_biclass.txt \
 --test LN/TestList_biclass.txt \
 --epoch 200 \
 --batch 32
+```
 
-######################## ################### ########################
+ 4\) Model outputs
+ In your *outpath* directory, you will find all outputs for all integration strategies and modeling approaches. An output file structure is shown in Figure 2.
+ 
+ ![**Figure 2.** Overview of output file structure](Fig2.png)
+
+### 3. Class Prediction and Feature Evaluation

@@ -8,7 +8,7 @@ Prerequisites
 =========
 * Install [R software](https://www.r-project.org/)
 * For DL models, install [Python](https://www.python.org/)
-* Install the following packages in their respective environments
+* Install the following packages
 
 | **Required R packages** | **Required Python packages** |
 | :--- | ---: |
@@ -39,7 +39,7 @@ Prerequisites
 
 Documentation
 =========
-See tutorial
+See [tutorial](http://kwanjeeraw.github.io/MMFramework/)
 
 License
 =========
