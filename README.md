@@ -39,7 +39,7 @@ Prerequisites
 
 Documentation
 =========
-See [tutorial](http://kwanjeeraw.github.io/MMFramework/)
+See [tutorial](https://htmlpreview.github.io/?https://github.com/kwanjeeraw/MMFramework/blob/main/vignettes/MMFramework_vignette.html)
 
 License
 =========
