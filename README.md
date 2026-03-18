@@ -1,11 +1,10 @@
 # MMFramework
-An integrative framework for clinical metabolomics
 MMFramework is a comprehensive platform for integrating metabolomics and clinical data that extends beyond conventional integration approaches to classification. 
 It systematically compares clinical-only, metabolomics-only, and integrative models to quantify how each modality contributes to knowledge discovery. 
 Through side-by-side evaluation, MMFramework identifies whether predictions are driven by physiological status, metabolic changes, or their combination. 
 It provides an evidence-based foundation for selecting optimal modeling strategies, enabling more effective and informed use of multi-modal data for classification tasks.
 
-Installation
+Prerequisites
 =========
 * Install [R software](https://www.r-project.org/)
 * For DL models, install [Python](https://www.python.org/)
@@ -30,6 +29,9 @@ Installation
 | tidyr |
 | tidytext |
 | tidyverse | 
+
+* Download MMFramework from [here](https://github.com/kwanjeeraw/MMFramework/blob/main/MMFramework.zip)
+* Unzip MMFramework.zip, now it is ready to use
 
 ### Notes
 * R packages can be installed via install.packages(), BiocManager::install, or remotes::install_github
