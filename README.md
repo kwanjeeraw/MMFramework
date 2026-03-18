@@ -9,29 +9,8 @@ It provides an evidence-based foundation for selecting optimal modeling strategi
 * Require [R software](https://www.r-project.org/)
 * For DL models, require [Python](https://www.python.org/)
 
-<div style="display: flex; gap: 40px;">
-
-<div style="width: 50%;">
-
-**Required R packages**  
-caret, circlize, ComplexHeatmap, dplyr, forcats, ggplot2, ggtext, metabox2,  
-optparse, pROC, qpdf, RColorBrewer, ropls, tibble, tidyr, tidytext, tidyverse
-
-</div>
-
-<div style="width: 50%;">
-
-**Required Python packages**  
-argparse, dill, math, matplotlib, numpy, os, pandas, random, seaborn,  
-shap, sklearn, sys, tensorflow
-
-</div>
-
-</div>
-
-
-| **Required R packages** | **Required Python packages **|
-| :--- | :--- |
+| **Required R packages** | **Required Python packages** |
+| :--- | ---: |
 | caret | argparse |
 | circlize | dill |
 | ComplexHeatmap | math |
