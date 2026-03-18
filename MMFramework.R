@@ -10,6 +10,7 @@ library(ggtext)
 library(qpdf)
 library(pROC)
 library(tibble)
+library(tidytext)
 
 # -------------------------------------------------------
 # Utility functions
@@ -299,19 +300,19 @@ plot_rank_stability <- function(rank_df,cutoff = NULL, title = "Rank Stability P
 
   # Define caption with colors
   caption_text = paste0(
-    "<span style='color:#C90000;'> Median Rank = ",cutoff,"</span>"
+    "<span style='color:#D35400;'> Median Rank = ",cutoff,"</span>"
   )
   # Plot
   ggplot(rank_df, aes(x = Rank_median, y = Feature)) +
-    geom_errorbarh(aes(xmin = Rank_median - (Rank_IQR/2), xmax = Rank_median + (Rank_IQR/2)),
-                   height = 0.2, color = "black") +
+    geom_errorbar(aes(xmin = Rank_median - (Rank_IQR/2), xmax = Rank_median + (Rank_IQR/2)),
+                  orientation = "y",width = 0.2, color = "black") +
     geom_point(aes(fill = Rank_median > cutoff),size = 5,alpha = 0.9,shape = 21,
                color = "black", stroke = 0.4) +
     geom_text(aes(label = round(Rank_median, 2)),nudge_y = -0.4,size = 4,show.legend = FALSE) +
     geom_vline(xintercept = cutoff, linetype = "dashed", color = "#D35400", linewidth = 1, alpha = 0.8) +
     scale_size_continuous(name = "Rank",trans = "reverse") +
     scale_fill_manual(values = c("#D65FA1", "#007BFF"), labels = c(" > Median Rank","< Median Rank")) +
-    labs(x = "Rank", y = "", color = "Color", title = title, subtitle = "Point: Median Rank; Bar: IQR", 
+    labs(x = "Rank", y = "", title = title, subtitle = "Point: Median Rank; Bar: IQR", 
          fill = NULL, caption = caption_text) + theme_bw() +
     theme(plot.title = element_text(size = 18), plot.subtitle = element_text(size = 12), 
           axis.title = element_text(size = 18), axis.text = element_text(size = 16),
@@ -454,7 +455,7 @@ compute_model_performance <- function(folder_path){
 }
 
 ##### Plot comparative heatmap #####
-#' input_list = c("I"="LN/integrated","C"="LN/clinical","M"="LN/metabolomics")
+#' input_list = c("Int"="LN/integrated","Cli"="LN/clinical","Met"="LN/metabolomics")
 #' title = "Control vs LN"
 plot_comparative_heatmap <- function(input_list, title="Comparative heatmap"){
   df_list = list()
@@ -470,26 +471,28 @@ plot_comparative_heatmap <- function(input_list, title="Comparative heatmap"){
   }
   # Combine all dataframes
   combined_df = do.call(rbind, df_list)
+  #combined_df = combined_df[grepl("_log2_(gradcam|shap|rf)|_auto_pls", combined_df$Model, ignore.case = TRUE), ] #filtered models
+  combined_df = combined_df[grepl("gradcam|shap|plsda|rf|elastic", combined_df$Model, ignore.case = TRUE), ] #filtered models
   combined_df$Type = ifelse(grepl("plsda|rf|elastic", combined_df$Model, ignore.case = TRUE),
     "ML", ifelse(grepl("gradcam|shap", combined_df$Model, ignore.case = TRUE),
-      "DL","NA")) #set model types
+      "DL","ND")) #set model types
   mat = (combined_df[, c("Type","Accuracy_mean", "Sensitivity_mean", "Specificity_mean", "F1_mean", "AUC_mean")])
   colnames(mat) = gsub("_mean$", "", colnames(mat))
   rownames(mat) = combined_df$Model
   # Set color
+  inpcolors = c("#d95f02", "#5A9BD5", "#1b9e77", "#7570b3", "#e7298a", "#a6761d")
   col_fun = colorRamp2(
     breaks = c(0.1, 0.4, 0.55, 0.7, 1.0),
     colors = c("#FFF176","#D9F99D","#4ADE80","#22C55E","#8B5CF6") 
   )
   row_col_fun <- function(rn) {
-    dplyr::case_when(
-      grepl("^C_",   rn) ~ "#5A9BD5",  # blue
-      grepl("^I_", rn) ~ "#d95f02",  # green
-      grepl("^M_",  rn) ~ "#1b9e77",  # orange
-      TRUE ~ "black"
-    )
+    prefix = sub("_.*", "", rn)
+    color_map = setNames(inpcolors[seq_along(input_list)], names(input_list))
+    cols = color_map[prefix]
+    cols[is.na(cols)] = "black" #default
+    cols
   }
-  type_col = c(DL = "#B12A90",ML = "#9C9C9C")
+  type_col = c(DL = "#B12A90",ML = "#9C9C9C",ND = "black")
   # Set matrix
   #mt = mat[grepl("_log2_(gradcam|shap|rf)|_auto_plsda", rownames(mat), ignore.case = TRUE), ] #filtered models
   mt = mat
@@ -521,11 +524,68 @@ plot_comparative_heatmap <- function(input_list, title="Comparative heatmap"){
   )#7x7
 }
 
-##### Plot cross-modal rank comparison #####
+##### Plot cross-model rank comparison #####
 #' input_list = c("I"="LN/integrated","C"="LN/clinical","M"="LN/metabolomics")
 #' featureFile = "auto_plsda_feature.csv"
 #' title = "Control vs LN"
 plot_cross_modal_rank <- function(input_list, featureFile, title="Cross-modal rank comparison"){
+  ### Internal parameters ###
+  # Compute mean per feature
+  comp_imp_avg <- function(in_df, input_type){
+    summary_df = in_df %>% group_by(Feature) %>%
+      summarise(
+        Importance = mean(Feature_Importance, na.rm = TRUE),
+      ) %>% arrange(desc(Importance)) %>%
+    mutate(
+      rank = row_number(),
+      input_type = input_type,
+      tag = paste0("[", prefix, "]") #edit tag if needed
+    )
+    return(summary_df)
+  }
+  input_name = c("Integrated","Clinical","Metabolomics","DataX","DataY","DataZ")
+  inpcolors = c("#d95f02", "#5A9BD5", "#1b9e77", "#7570b3", "#e7298a", "#a6761d")
+  ### ###### ###### ###
+  df_list = list()
+  # Collect featureFile from each folder
+  for (i in seq_along(input_list)) {
+    prefix = names(input_list)[i]
+    modality = input_name[i]
+    file_path = file.path(input_list[[prefix]], featureFile)
+    if (file.exists(file_path)) {
+      tmp = read.csv(file_path, stringsAsFactors = TRUE)
+      df_list[[prefix]] = comp_imp_avg(tmp, modality)
+    }
+  }
+  df_plot = bind_rows(df_list, .id = "prefix")
+  # Build y-axis label
+  tag_lookup = df_plot %>% filter(prefix != names(input_list)[1]) %>%
+    select(Feature, tag) %>% distinct() #for mapping
+  df_plot = df_plot %>% select(-tag) %>% left_join(tag_lookup, by = "Feature")
+  df_plot$Feature_label = paste0(df_plot$Feature, " ", df_plot$tag) #create label tag
+  df_plot$input_type = factor(df_plot$input_type, levels = input_name[seq_along(input_list)])
+  df_plot$Feature_label = reorder_within(df_plot$Feature_label,-df_plot$rank, df_plot$input_type) #order each facet
+  # Plot
+  ggplot(df_plot, aes(x=Importance, y=Feature_label, fill=input_type)) +
+    geom_col(color = "black", width = 0.8
+             #linewidth = 0.5
+             ) +
+    geom_text(aes(label = round(Importance,2)), hjust = -0.07,size = 4.5) +
+    facet_wrap(~input_type, scales = "free_y") + scale_y_reordered() + 
+    scale_fill_manual(values = inpcolors) +
+    labs(title = title,x = "Average Feature Importance",y = NULL,fill="Input type") +
+    theme_test(base_size = 14) +
+    theme(plot.title = element_text(size = 16), axis.title = element_text(size = 14, face = "bold"),
+          axis.text = element_text(size = 15, color="black"),text = element_text(size = 16),
+          strip.text = element_text(size = 16),legend.text = element_text(size = 14),legend.position = "top")+
+    scale_x_continuous(limits = c(ifelse(min(df_plot$Importance) >=0,0,min(df_plot$Importance)), max(df_plot$Importance)*1.13)) #15.5x6
+}
+
+##### Plot modality ranking comparison #####
+#' input_list = c("I"="LN/integrated","C"="LN/clinical","M"="LN/metabolomics")
+#' featureFile = "auto_plsda_feature.csv"
+#' title = "Control vs LN"
+plot_modality_rank_comparison <- function(input_list, featureFile, title="Cross-modal rank comparison"){
   ### Internal parameters ###
   # Compute mean per feature
   comp_imp_avg <- function(in_df){
@@ -539,16 +599,16 @@ plot_cross_modal_rank <- function(input_list, featureFile, title="Cross-modal ra
   rank_domain <- function(df, prefix, model_name) {
     if (length(unique(df$Importance)) == 1) {#can't find important feature
       summary_df = df %>% mutate(
-          domain_rank = 1,
-          rank_label  = paste0(prefix, domain_rank),
-          input_type  = model_name
-        ) %>% select(Feature, rank_label, input_type)
+        domain_rank = 1,
+        rank_label  = paste0(prefix, domain_rank),
+        input_type  = model_name
+      ) %>% select(Feature, rank_label, input_type)
     } else {
       summary_df = df %>% mutate(
-          domain_rank = rank(-Importance, ties.method = "first"),
-          rank_label  = paste0(prefix, domain_rank),
-          input_type  = model_name
-        ) %>% select(Feature, rank_label, input_type)
+        domain_rank = rank(-Importance, ties.method = "first"),
+        rank_label  = paste0(prefix, domain_rank),
+        input_type  = model_name
+      ) %>% select(Feature, rank_label, input_type)
     }
     return(summary_df)
   }
@@ -581,11 +641,21 @@ plot_cross_modal_rank <- function(input_list, featureFile, title="Cross-modal ra
   }
   # Merge with integrated ranking
   rank_df = bind_rows(rank_list)
-  df_plot = intg_rank %>%
-    left_join(rank_df, by = "Feature") %>% mutate(
-      y_label = factor(paste0(Feature, " (I", intg_rank, ")"))) %>% 
-    arrange(intg_rank) %>% mutate(
-      y_label = factor(y_label, levels = rev(y_label)))
+  df_plot = intg_rank %>% left_join(rank_df, by = "Feature")
+  
+  # Assign modality label
+  df_plot$label_color = df_plot$input_type
+  df_plot$label_color[is.na(df_plot$label_color)] = "Int"
+  
+  # Attach modality tag to feature name
+  df_plot$Feature = paste0(df_plot$Feature, " [", substr(df_plot$label_color,1,1), "]")
+  
+  # Build y-axis label with integrated rank
+  df_plot = df_plot %>%
+    mutate(y_label = paste0(Feature, " (Int", intg_rank, ")")) %>%
+    arrange(intg_rank) %>%
+    mutate(y_label = factor(y_label, levels = rev(y_label)))
+  
   # Plot
   ggplot(df_plot, aes(x = Importance, y = y_label)) +
     geom_col(fill = "#d95f02",color = "black",width = 0.8,linewidth = 0.5) +
@@ -594,7 +664,7 @@ plot_cross_modal_rank <- function(input_list, featureFile, title="Cross-modal ra
     scale_color_manual(values = inpcolors) +
     labs(title = title,x = "Average Feature Importance",y = NULL) +
     theme_test(base_size = 14) +
-    theme(plot.title = element_text(size = 18), axis.title = element_text(size = 18),
+    theme(plot.title = element_text(size = 16), axis.title = element_text(size = 16),
           axis.text = element_text(size = 14, color="black"),text = element_text(size = 16),legend.position = "top")+
     scale_x_continuous(limits = c(ifelse(min(df_plot$Importance) >=0,0,min(df_plot$Importance)), max(df_plot$Importance)*1.14)) #8x7
 }
@@ -665,7 +735,7 @@ combine_ranking <- function(input_list, n_perm=1000, out_folder=""){
          x = "Rank Product", y = "", color = "Significance"
     ) + theme_bw() +
     theme(plot.title = element_text(size = 18), plot.subtitle = element_text(size = 12), 
-          axis.title = element_text(size = 18), axis.text = element_text(size = 16),
+          axis.title = element_text(size = 16), axis.text = element_text(size = 16),
           text = element_text(size = 16)
     )
   
@@ -673,8 +743,8 @@ combine_ranking <- function(input_list, n_perm=1000, out_folder=""){
   cutoff = median(result_rp$Rank_median, na.rm = TRUE)
   caption_text = paste0("<span style='color:#C90000;'> Median Rank = ",cutoff,"</span>")
   MedianRank_Plot = ggplot(result_rp, aes(x = Rank_median, y = reorder(Feature, -Rank_median))) +
-    geom_errorbarh(aes(xmin = Rank_median - (Rank_IQR/2), xmax = Rank_median + (Rank_IQR/2)),
-                   height = 0.2, color = "black") +
+    geom_errorbar(aes(xmin = Rank_median - (Rank_IQR/2), xmax = Rank_median + (Rank_IQR/2)),
+      orientation = "y",width = 0.2, color = "black") +
     geom_point(aes(fill = Rank_median > cutoff),size = 5,alpha = 0.9,shape = 21,
                color = "black", stroke = 0.4) +
     geom_text(aes(label = round(Rank_median, 2)),nudge_y = -0.4,size = 4.5,show.legend = FALSE) +
@@ -685,7 +755,7 @@ combine_ranking <- function(input_list, n_perm=1000, out_folder=""){
          title = "Feature Median Rank", subtitle = "Point: Median Rank; Bar: IQR", fill = NULL,
          caption = caption_text) + theme_bw() +
     theme(plot.title = element_text(size = 18), plot.subtitle = element_text(size = 12), 
-          axis.title = element_text(size = 18), axis.text = element_text(size = 16),
+          axis.title = element_text(size = 16), axis.text = element_text(size = 16),
           text = element_text(size = 16), 
           plot.caption = element_markdown(size = 14, hjust = 0)
     )

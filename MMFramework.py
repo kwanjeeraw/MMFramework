@@ -543,10 +543,10 @@ def plot_avg_heatmap_active_cells(X_data, y_data, avg_importance, feature_names,
                                              linewidth=4, edgecolor="#000000",facecolor="none", zorder=2)
                         ax.add_patch(rect)
 
-                    ax.text(c, r-0.15, feature_names[idx],
-                            ha="center", va="center", color="black",fontsize=10, fontweight="bold", zorder=3)
-                    ax.text(c, r+0.15, f"{imp_val:.3f}",
-                            ha="center", va="center", color="black",fontsize=10, zorder=3)
+                    ax.text(c, r, feature_names[idx],
+                            ha="center", va="center", color="black",fontsize=9, fontweight="bold", zorder=3)
+                    # ax.text(c, r+0.15, f"{imp_val:.3f}",
+                    #         ha="center", va="center", color="black",fontsize=9, zorder=3)
                     idx += 1
     
     # Hide unused axes (if odd number of classes)
@@ -622,10 +622,10 @@ def plot_avg_heatmap_active_cells_topn(X_data, y_data, avg_importance, feature_n
                                              linewidth=4, edgecolor="#000000", facecolor="none", zorder=2)
                         ax.add_patch(rect)
 
-                    ax.text(c, r-0.15, feature_names[idx],
-                            ha="center", va="center", color="black", fontsize=10, fontweight="bold", zorder=3)
-                    ax.text(c, r+0.15, f"{imp_val:.3f}",
-                            ha="center", va="center", color="black", fontsize=10, zorder=3)
+                    ax.text(c, r, feature_names[idx],
+                            ha="center", va="center", color="black", fontsize=9, fontweight="bold", zorder=3)
+                    # ax.text(c, r+0.15, f"{imp_val:.3f}",
+                    #         ha="center", va="center", color="black", fontsize=9, zorder=3)
                     idx += 1
     
     for j in range(len(classes), len(axes)):
@@ -696,10 +696,10 @@ def plot_avg_heatmap_active_cells_per_class(X_data, y_data, gradcam_per_class, f
                         ax.add_patch(rect)
 
                     # Label feature name and GradCAM value
-                    ax.text(c, r - 0.15, fname, ha="center", va="center",
+                    ax.text(c, r, fname, ha="center", va="center",
                             color="black", fontsize=9, fontweight="bold", zorder=3)
-                    ax.text(c, r + 0.15, f"{imp_val:.3f}", ha="center", va="center",
-                            color="black", fontsize=9, zorder=3)
+                    # ax.text(c, r + 0.15, f"{imp_val:.3f}", ha="center", va="center",
+                    #         color="black", fontsize=9, zorder=3)
                     idx += 1
 
     # Hide unused axes (if odd number of classes)
@@ -776,10 +776,10 @@ def plot_avg_heatmap_active_cells_topn_per_class(X_data, y_data, gradcam_per_cla
                         ax.add_patch(rect)
 
                     # Label feature name and GradCAM value
-                    ax.text(c, r - 0.15, fname, ha="center", va="center",
+                    ax.text(c, r, fname, ha="center", va="center",
                             color="black", fontsize=9, fontweight="bold", zorder=3)
-                    ax.text(c, r + 0.15, f"{imp_val:.3f}", ha="center", va="center",
-                            color="black", fontsize=9, zorder=3)
+                    # ax.text(c, r + 0.15, f"{imp_val:.3f}", ha="center", va="center",
+                    #         color="black", fontsize=9, zorder=3)
                     idx += 1
 
     # Hide unused axes (if odd number of classes)
