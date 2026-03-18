@@ -1,0 +1,97 @@
+---
+title: "MMFramework: A comprehensive platform for integrating metabolomics and clinical data"
+author: "Kw W"
+date: "`r Sys.Date()`"
+always_allow_html: yes
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{MMFramework_vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## 1 INSTALLATION
+
+1. Install prerequisite software and required packages (see [instruction](https://github.com/kwanjeeraw/MMFramework)).
+2. Download MMFramework from [here](https://github.com/kwanjeeraw/MMFramework/blob/main/MMFramework.zip)
+3. Unzip the downloaded MMFramework.zip file to your desired directory.
+
+## 2 RUNNING FRAMEWORK
+1. Open a terminal:
+* Windows: Command Prompt or PowerShell
+* macOS / Linux: Terminal
+2. Open R or RStudio.
+3. Run the framework script step-by-step as the following section.
+
+## 3 MMFramework
+1. A schematic overview of the analysis workflow is shown in Figure S1.
+
+![**Figure 1.** Overview of the analysis workflow](Fig1.png)
+
+*2.1 Input data*
+  The framework requires three input data types:
+  * Clinical data
+  * Metabolomics data
+  * Integrated data (a concatenated table of clinical and metabolomics data)
+  A dataframe of patient metadata and metabolite profiles as shown in Table 2.
+
+```{r,echo=FALSE, results='asis', message=FALSE, warning=FALSE}
+library(knitr)
+library(kableExtra)
+dt = read.csv(file = "../LN/input_LN.csv", row.names = FALSE)
+kable(dt) %>%
+  kable_styling(c("striped", "bordered"), full_width = F) %>%
+  column_spec(1:9, bold = T, background = '#FFCCCC') %>%
+  column_spec(9, border_right = T) %>%
+  column_spec(10:14, background = '#CCE5FF')
+```
+
+**Table 2**. Part of adipose tissue data set is illustrated including patient metadata (red) and metabolite profiles (blue).
+
+######################## RUN MODELS ########################
+##### ML models #####
+#PLS-DA
+Rscript Pls_run.R --wkpath /Users/mint/Documents/siri/nonImage/production/MMFramework/ \
+--proc auto \
+--input LN/input_LN.csv \
+--outpath LN/metabolomics \
+--train LN/TrainList_biclass.txt \
+--test LN/TestList_biclass.txt
+
+#RF
+Rscript Rf_run.R --wkpath /Users/mint/Documents/siri/nonImage/production/MMFramework/ \
+--proc log2 \
+--input LN/input_LN.csv \
+--outpath LN/metabolomics \
+--train LN/TrainList_biclass.txt \
+--test LN/TestList_biclass.txt
+
+##### DL models ##### 
+#Grad-CAM
+python3 Gradcam_run.py --wkpath /Users/mint/Documents/siri/nonImage/production/MMFramework/ \
+--proc log2 \
+--input LN/input_LN.csv \
+--outpath LN/metabolomics \
+--train LN/TrainList_biclass.txt \
+--test LN/TestList_biclass.txt \
+--epoch 200 \
+--batch 32
+
+#SHAP
+python3 Shap_run.py --wkpath /Users/mint/Documents/siri/nonImage/production/MMFramework/ \
+--proc log2 \
+--input LN/input_LN.csv \
+--outpath LN/metabolomics \
+--train LN/TrainList_biclass.txt \
+--test LN/TestList_biclass.txt \
+--epoch 200 \
+--batch 32
+
+######################## ################### ########################
