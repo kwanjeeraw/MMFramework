@@ -1,6 +1,6 @@
 ---
 title: "MMFramework: A comprehensive platform for integrating metabolomics and clinical data"
-author: "Kw W"
+author: "Kwanjeera W"
 date: "`r Sys.Date()`"
 always_allow_html: yes
 output: rmarkdown::html_vignette
@@ -21,7 +21,7 @@ knitr::opts_chunk$set(
 
 1. Install prerequisite software and required packages (see [instruction](https://github.com/kwanjeeraw/MMFramework)).
 2. Download MMFramework from [here](https://github.com/kwanjeeraw/MMFramework/blob/main/MMFramework.zip)
-3. Unzip the downloaded MMFramework.zip file to your desired directory.
+3. Unzip the downloaded MMFramework.zip file to your desired directory and this will be your working directory.
 4. Run the framework script step-by-step as described in the next section.
 
 ## MMFramework
@@ -44,7 +44,7 @@ The input dataset should be a table containing the '*Index*' and '*Class*' colum
 ```{r,echo=FALSE, results='asis', message=FALSE, warning=FALSE}
 library(knitr)
 library(kableExtra)
-dt = read.csv("input_LN.csv", row.names = NULL, check.names = FALSE)
+dt = read.csv("ex_input.csv", row.names = NULL, check.names = FALSE)
 dt[c(1:5,72:76), 1:14] %>%
   kable(row.names = FALSE) %>%
   kable_styling(c("striped", "bordered"), full_width = FALSE) %>%
@@ -158,6 +158,8 @@ The specified *outpath* directory contains all outputs from different integratio
 
 This step generates results for model comparison and evaluation, as well as feature ranking comparisons.
 
+Step: Open R or RStudio → Compute model performance → Plot
+
  1\) Open R or RStudio, then set the working directory and load the framework
  
  ```
@@ -178,11 +180,55 @@ This step generates results for model comparison and evaluation, as well as feat
   compute_model_performance(folder_path="LN/metabolomics") #for metabolomics data
   ```
 
- 3\) Plot a comparative performance heatmap
+#### 3.1 Plot a comparative performance heatmap
  
- Run the following R commands to generate a heatmap comparing model performance across data modalities and modeling approaches.
+Run the following R commands to generate a heatmap comparing model performance across data modalities and modeling approaches.
  
-  ```
-  input_list = c("Int"="LN/integrated","Cli"="LN/clinical","Met"="LN/metabolomics")
-  plot_comparative_heatmap(input_list, title="Control vs LN")
-  ```
+```
+input_list = c("Int"="LN/integrated","Cli"="LN/clinical","Met"="LN/metabolomics")
+plot_comparative_heatmap(input_list, title="Control vs LN")
+```
+
+#### 3.2 Plot cross-modal rank comparison
+ 
+Run the following R commands to generate a cross-modal comparison of feature importance rankings. This script is executed for each modeling approach and uses the [xx]_feature.csv file from the modeling output. Modify *featureFile* as needed to generate a plot for a specific modeling approach.
+ 
+```
+input_list = c("Int"="LN/integrated","Cli"="LN/clinical","Met"="LN/metabolomics")
+featureFile = "log2_rf_feature.csv"
+plot_cross_modal_rank(input_list, featureFile, title="Control vs LN")
+```
+
+#### 3.3 Plot combined rankings (2 plots)
+
+Run the following R commands to generate a rank product-based ranking and feature median rank. This script is executed for each modeling approach and uses the [xx]_feature.csv file from the modeling output. Specify the required arguments:
+
+  - *--featureFile*: File name for a specific modeling approach (e.g., log2_rf_feature.csv)
+  - *--n_perm*: Number of permutations (default: 1000)
+  - *--out_folder*: Output directory to save rankvalues_outputs.csv (e.g., LN)
+
+```
+input_list = c("Int"="LN/integrated","Cli"="LN/clinical","Met"="LN/metabolomics")
+featureFile = "log2_rf_feature.csv"
+n_perm = 1000
+out_folder = "LN"
+combine_ranking(input_list, n_perm=n_perm, out_folder=out_folder)
+```
+ 
+#### 3.4 Plot accuracy curves across training rounds (optional)
+ 
+Run the following R commands to generate accuracy curves across training iterations. This step allows you to monitor model training performance for each data modality by specifying the *folder_path*
+
+```
+folder_path = "LN/clinical"
+plot_cross_model_accuracy(folder_path, title="Control vs LN (Clinical modal)")
+```
+
+#### 3.5 Plot overall model performance (optional)
+ 
+Run the following R commands to generate overall model performance. This step allows you to evaluate model prediction performance for each data modality by specifying the *folder_path*.
+ 
+```
+folder_path = "LN/clinical/"
+plot_cross_model_performance(folder_path, title="Control vs LN (Clinical modal)")
+```

@@ -10,9 +10,9 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<meta name="author" content="Kw W" />
+<meta name="author" content="Kwanjeera W" />
 
-<meta name="date" content="2026-03-18" />
+<meta name="date" content="2026-03-19" />
 
 <title>MMFramework: A comprehensive platform for integrating metabolomics and clinical data</title>
 
@@ -463,8 +463,8 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">MMFramework: A comprehensive platform for
 integrating metabolomics and clinical data</h1>
-<h4 class="author">Kw W</h4>
-<h4 class="date">2026-03-18</h4>
+<h4 class="author">Kwanjeera W</h4>
+<h4 class="date">2026-03-19</h4>
 
 
 
@@ -473,8 +473,8 @@ integrating metabolomics and clinical data</h1>
 <ol style="list-style-type: decimal">
 <li>Install prerequisite software and required packages (see <a href="https://github.com/kwanjeeraw/MMFramework">instruction</a>).</li>
 <li>Download MMFramework from <a href="https://github.com/kwanjeeraw/MMFramework/blob/main/MMFramework.zip">here</a></li>
-<li>Unzip the downloaded MMFramework.zip file to your desired
-directory.</li>
+<li>Unzip the downloaded MMFramework.zip file to your desired directory
+and this will be your working directory.</li>
 <li>Run the framework script step-by-step as described in the next
 section.</li>
 </ol>
@@ -1103,6 +1103,7 @@ file structure</div>
 <h3>3. Class Prediction and Feature Evaluation</h3>
 <p>This step generates results for model comparison and evaluation, as
 well as feature ranking comparisons.</p>
+<p>Step: Open R or RStudio → Compute model performance → Plot</p>
 <p>1) Open R or RStudio, then set the working directory and load the
 framework</p>
 <pre><code>##### SET WORKING DIRECTORY TO MMFRAMEWORK #####
@@ -1116,11 +1117,60 @@ each input type:</p>
 <pre><code>compute_model_performance(folder_path=&quot;LN/integrated&quot;) #for integrated data
 compute_model_performance(folder_path=&quot;LN/clinical&quot;) #for clinical data
 compute_model_performance(folder_path=&quot;LN/metabolomics&quot;) #for metabolomics data</code></pre>
-<p>3) Plot a comparative performance heatmap</p>
+<div id="plot-a-comparative-performance-heatmap" class="section level4">
+<h4>3.1 Plot a comparative performance heatmap</h4>
 <p>Run the following R commands to generate a heatmap comparing model
 performance across data modalities and modeling approaches.</p>
 <pre><code>input_list = c(&quot;Int&quot;=&quot;LN/integrated&quot;,&quot;Cli&quot;=&quot;LN/clinical&quot;,&quot;Met&quot;=&quot;LN/metabolomics&quot;)
 plot_comparative_heatmap(input_list, title=&quot;Control vs LN&quot;)</code></pre>
+</div>
+<div id="plot-cross-modal-rank-comparison" class="section level4">
+<h4>3.2 Plot cross-modal rank comparison</h4>
+<p>Run the following R commands to generate a cross-modal comparison of
+feature importance rankings. This script is executed for each modeling
+approach and uses the [xx]_feature.csv file from the modeling output.
+Modify <em>featureFile</em> as needed to generate a plot for a specific
+modeling approach.</p>
+<pre><code>input_list = c(&quot;Int&quot;=&quot;LN/integrated&quot;,&quot;Cli&quot;=&quot;LN/clinical&quot;,&quot;Met&quot;=&quot;LN/metabolomics&quot;)
+featureFile = &quot;log2_rf_feature.csv&quot;
+plot_cross_modal_rank(input_list, featureFile, title=&quot;Control vs LN&quot;)</code></pre>
+</div>
+<div id="plot-combined-rankings-2-plots" class="section level4">
+<h4>3.3 Plot combined rankings (2 plots)</h4>
+<p>Run the following R commands to generate a rank product-based ranking
+and feature median rank. This script is executed for each modeling
+approach and uses the [xx]_feature.csv file from the modeling output.
+Specify the required arguments:</p>
+<ul>
+<li><em>–featureFile</em>: File name for a specific modeling approach
+(e.g., log2_rf_feature.csv)</li>
+<li><em>–n_perm</em>: Number of permutations (default: 1000)</li>
+<li><em>–out_folder</em>: Output directory to save
+rankvalues_outputs.csv (e.g., LN)</li>
+</ul>
+<pre><code>input_list = c(&quot;Int&quot;=&quot;LN/integrated&quot;,&quot;Cli&quot;=&quot;LN/clinical&quot;,&quot;Met&quot;=&quot;LN/metabolomics&quot;)
+featureFile = &quot;log2_rf_feature.csv&quot;
+n_perm = 1000
+out_folder = &quot;LN&quot;
+combine_ranking(input_list, n_perm=n_perm, out_folder=out_folder)</code></pre>
+</div>
+<div id="plot-accuracy-curves-across-training-rounds-optional" class="section level4">
+<h4>3.4 Plot accuracy curves across training rounds (optional)</h4>
+<p>Run the following R commands to generate accuracy curves across
+training iterations. This step allows you to monitor model training
+performance for each data modality by specifying the
+<em>folder_path</em></p>
+<pre><code>folder_path = &quot;LN/clinical&quot;
+plot_cross_model_accuracy(folder_path, title=&quot;Control vs LN (Clinical modal)&quot;)</code></pre>
+</div>
+<div id="plot-overall-model-performance-optional" class="section level4">
+<h4>3.5 Plot overall model performance (optional)</h4>
+<p>Run the following R commands to generate overall model performance.
+This step allows you to evaluate model prediction performance for each
+data modality by specifying the <em>folder_path</em>.</p>
+<pre><code>folder_path = &quot;LN/clinical/&quot;
+plot_cross_model_performance(folder_path, title=&quot;Control vs LN (Clinical modal)&quot;)</code></pre>
+</div>
 </div>
 </div>
 
