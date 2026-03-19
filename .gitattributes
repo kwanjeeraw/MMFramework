@@ -1,1 +1,2 @@
-*.R linguist-language=R
+*.py text diff=python
+*.py3 text diff=python
